@@ -2,15 +2,8 @@
 
 A Node.js terminal music player for macOS.
 
-## Requirements
-
-- Node.js v18+
-- macOS (`afplay` for playback)
-
-## Run
+This version adds audio helpers: time formatting, duration lookup, and generated demo WAV tracks when `songs/` is empty.
 
 ```bash
 npm start
 ```
-
-Put audio files in the `songs/` folder in later versions of this project.
