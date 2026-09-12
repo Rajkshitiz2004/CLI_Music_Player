@@ -1,0 +1,13 @@
+{
+  "name": "cli-music-player",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive terminal music player for macOS",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
