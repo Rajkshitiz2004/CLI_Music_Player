@@ -1,9 +1,11 @@
 import readline from 'node:readline';
+import { formatTime } from './audioUtils.js';
 
 export class UI {
   constructor(playlist, player) {
     this.playlist = playlist;
     this.player = player;
+    this.renderInterval = null;
     this.isRawMode = false;
   }
 
@@ -17,10 +19,15 @@ export class UI {
       process.stdin.on('keypress', this.handleKeyPress.bind(this));
     }
 
+    this.renderInterval = setInterval(() => this.render(), 100);
     this.render();
   }
 
   stop() {
+    if (this.renderInterval) {
+      clearInterval(this.renderInterval);
+      this.renderInterval = null;
+    }
     if (this.isRawMode && process.stdin.isTTY) {
       process.stdin.setRawMode(false);
       this.isRawMode = false;
@@ -43,7 +50,15 @@ export class UI {
       this.playlist.selectNext();
     } else if (key.name === 'return') {
       const track = this.playlist.setPlayingToSelected();
-      if (track) this.player.play(track);
+      if (track) this.player.play(track, 0);
+    } else if (key.name === 'space' || key.name === 'p' || str === ' ') {
+      this.player.togglePause();
+    } else if (key.name === 'left') {
+      this.player.seek(-5);
+    } else if (key.name === 'right') {
+      this.player.seek(5);
+    } else if (key.name === 'm') {
+      this.player.toggleMute();
     }
 
     this.render();
@@ -54,17 +69,29 @@ export class UI {
 
     this.playlist.tracks.forEach((track, i) => {
       const cursor = i === this.playlist.selectedIndex ? '>' : ' ';
-      const playing = i === this.playlist.playingIndex && this.player.state === 'PLAYING' ? '▶' : ' ';
-      lines.push(`${cursor} ${playing} ${track.id}. ${track.title} [${track.formattedDuration}]`);
+      let icon = ' ';
+      if (i === this.playlist.playingIndex) {
+        icon = this.player.state === 'PAUSED' ? '⏸' : this.player.state === 'PLAYING' ? '▶' : ' ';
+      }
+      lines.push(`${cursor} ${icon} ${track.id}. ${track.title} [${track.formattedDuration}]`);
     });
 
     lines.push('');
-    if (this.player.currentTrack) {
-      lines.push(`Now playing: ${this.player.currentTrack.title} (${this.player.state})`);
+    const playing = this.player.currentTrack;
+    if (playing) {
+      const elapsed = this.player.getElapsedSeconds();
+      const duration = playing.duration || 1;
+      const pct = Math.min(100, Math.max(0, Math.floor((elapsed / duration) * 100)));
+      const filled = Math.floor(pct / 5);
+      const bar = `${'█'.repeat(filled)}${'░'.repeat(20 - filled)}`;
+      const mute = this.player.isMuted ? ' MUTED' : '';
+      lines.push(`${this.player.state}${mute}: ${playing.title}`);
+      lines.push(`${formatTime(elapsed)} / ${playing.formattedDuration}  [${bar}] ${pct}%`);
     } else {
       lines.push('Press Enter to play the highlighted track.');
     }
-    lines.push('[↑/↓] Select  [Enter] Play  [q] Quit');
+
+    lines.push('[↑/↓] Select  [Enter] Play  [Space] Pause  [←/→] Seek  [m] Mute  [q] Quit');
 
     readline.cursorTo(process.stdout, 0, 0);
     readline.clearScreenDown(process.stdout);
