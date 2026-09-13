@@ -14,27 +14,34 @@ export class Playlist {
     this.tracks = [];
     if (!fs.existsSync(this.tracksDir)) return;
 
+    const files = fs.readdirSync(this.tracksDir);
     const validExts = ['.wav', '.mp3', '.m4a', '.flac', '.aac', '.aiff'];
-    const audioFiles = fs.readdirSync(this.tracksDir)
-      .filter(f => !f.startsWith('.') && validExts.includes(path.extname(f).toLowerCase()))
+
+    const audioFiles = files
+      .filter(f => !f.startsWith('.') && !f.startsWith('tmp_') && validExts.includes(path.extname(f).toLowerCase()))
       .sort();
 
     audioFiles.forEach((file, idx) => {
       const fullPath = path.join(this.tracksDir, file);
-      const title = path.basename(file, path.extname(file))
-        .replace(/^[0-9]+[_-]?/, '')
-        .replace(/[_-]/g, ' ');
+      const nameWithoutExt = path.basename(file, path.extname(file))
+        .replace(/^[0-9]+[_-]?/, '') // remove leading track numbers if present
+        .replace(/[_-]/g, ' ');       // replace underscores/dashes with spaces
+
       const duration = getAudioDuration(fullPath);
 
       this.tracks.push({
         id: idx + 1,
         filename: file,
-        title,
+        title: nameWithoutExt,
         path: fullPath,
-        duration,
+        duration: duration,
         formattedDuration: formatTime(duration)
       });
     });
+
+    if (this.selectedIndex >= this.tracks.length) {
+      this.selectedIndex = Math.max(0, this.tracks.length - 1);
+    }
   }
 
   selectNext() {
@@ -51,8 +58,18 @@ export class Playlist {
     return this.tracks[this.selectedIndex] || null;
   }
 
+  getPlayingTrack() {
+    if (this.playingIndex < 0 || this.playingIndex >= this.tracks.length) return null;
+    return this.tracks[this.playingIndex];
+  }
+
   setPlayingToSelected() {
     this.playingIndex = this.selectedIndex;
     return this.getSelectedTrack();
+  }
+
+  nextTrackIndex() {
+    if (this.tracks.length === 0) return -1;
+    return (this.playingIndex + 1) % this.tracks.length;
   }
 }

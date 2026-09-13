@@ -14,7 +14,7 @@ export function getAudioDuration(filePath) {
     const match = output.match(/estimated duration:\s*([\d.]+)\s*sec/i);
     if (match) return Number(match[1]);
   } catch {
-    // Fall through to WAV header parsing.
+    // Fall through to WAV header parsing for environments without afinfo.
   }
 
   try {
@@ -25,11 +25,11 @@ export function getAudioDuration(filePath) {
       const bitsPerSample = header.readUInt16LE(34);
       const dataOffset = header.indexOf(Buffer.from('data'));
       if (dataOffset >= 0 && channels && sampleRate && bitsPerSample) {
-        return header.readUInt32LE(dataOffset + 4) / (channels * sampleRate * bitsPerSample / 8);
+        return (header.readUInt32LE(dataOffset + 4) / (channels * sampleRate * bitsPerSample / 8));
       }
     }
   } catch {
-    // Treat unreadable files as zero length.
+    // A track that cannot be inspected is treated as zero length.
   }
   return 0;
 }
@@ -40,7 +40,8 @@ export function ensureDemoTracks(tracksDir) {
   if (hasAudio) return;
 
   for (const [index, frequency] of [261.63, 329.63, 392].entries()) {
-    writeTone(path.join(tracksDir, `demo-${index + 1}.wav`), frequency);
+    const filePath = path.join(tracksDir, `demo-${index + 1}.wav`);
+    writeTone(filePath, frequency);
   }
 }
 
@@ -55,18 +56,17 @@ function writeTone(filePath, frequency) {
   }
 
   const header = Buffer.alloc(44);
-  header.write('RIFF', 0);
-  header.writeUInt32LE(36 + data.length, 4);
-  header.write('WAVE', 8);
-  header.write('fmt ', 12);
-  header.writeUInt32LE(16, 16);
-  header.writeUInt16LE(1, 20);
-  header.writeUInt16LE(1, 22);
-  header.writeUInt32LE(sampleRate, 24);
-  header.writeUInt32LE(sampleRate * 2, 28);
-  header.writeUInt16LE(2, 32);
-  header.writeUInt16LE(16, 34);
-  header.write('data', 36);
-  header.writeUInt32LE(data.length, 40);
+  header.write('RIFF', 0); header.writeUInt32LE(36 + data.length, 4); header.write('WAVE', 8);
+  header.write('fmt ', 12); header.writeUInt32LE(16, 16); header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22); header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(sampleRate * 2, 28); header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34); header.write('data', 36); header.writeUInt32LE(data.length, 40);
   fs.writeFileSync(filePath, Buffer.concat([header, data]));
+}
+
+export function cleanupTempFiles(tracksDir) {
+  if (!fs.existsSync(tracksDir)) return;
+  for (const file of fs.readdirSync(tracksDir)) {
+    if (file.startsWith('tmp_')) fs.rmSync(path.join(tracksDir, file), { force: true });
+  }
 }

@@ -28,6 +28,7 @@ export class AudioPlayer extends EventEmitter {
       if (child === this.process) this.emit('error', error);
     });
     child.once('close', code => {
+      // Ignore termination from an older track after a new track has started.
       if (playbackId !== this.playbackId || child !== this.process) return;
       this.process = null;
       if (this.state !== 'PLAYING') return;
