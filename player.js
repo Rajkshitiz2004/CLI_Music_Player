@@ -7,10 +7,12 @@ export class AudioPlayer extends EventEmitter {
     this.currentTrack = null;
     this.process = null;
     this.state = 'STOPPED';
+    this.playbackId = 0;
   }
 
   play(track) {
-    this.stop();
+    this.stopCurrentProcess();
+    const playbackId = ++this.playbackId;
     this.currentTrack = track;
     const child = spawn('afplay', [track.path], { stdio: 'ignore' });
     this.process = child;
@@ -18,7 +20,7 @@ export class AudioPlayer extends EventEmitter {
       if (child === this.process) this.emit('error', error);
     });
     child.once('close', code => {
-      if (child !== this.process) return;
+      if (playbackId !== this.playbackId || child !== this.process) return;
       this.process = null;
       this.state = 'STOPPED';
       if (code === 0) this.emit('finished');
@@ -27,11 +29,16 @@ export class AudioPlayer extends EventEmitter {
   }
 
   stop() {
+    this.playbackId += 1;
+    this.stopCurrentProcess();
+    this.state = 'STOPPED';
+    this.currentTrack = null;
+  }
+
+  stopCurrentProcess() {
     if (this.process) {
       this.process.kill('SIGTERM');
       this.process = null;
     }
-    this.state = 'STOPPED';
-    this.currentTrack = null;
   }
 }

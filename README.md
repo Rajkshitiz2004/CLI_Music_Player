@@ -1,6 +1,12 @@
 # CLI Music Player
 
-This version plays the first playlist track with macOS `afplay`. Press Ctrl+C to stop.
+Interactive terminal UI:
+
+| Key | Action |
+| --- | --- |
+| `↑` / `↓` | Select track |
+| `Enter` | Play highlighted track |
+| `q` / `Ctrl+C` | Quit |
 
 ```bash
 npm start
