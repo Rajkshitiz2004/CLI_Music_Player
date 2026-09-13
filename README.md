@@ -1,8 +1,6 @@
 # CLI Music Player
 
-A Node.js terminal music player for macOS.
-
-This version adds audio helpers: time formatting, duration lookup, and generated demo WAV tracks when `songs/` is empty.
+This version loads a playlist from `songs/` and prints a numbered track list.
 
 ```bash
 npm start

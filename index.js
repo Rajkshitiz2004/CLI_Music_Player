@@ -1,18 +1,20 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ensureDemoTracks, getAudioDuration, formatTime } from './audioUtils.js';
+import { ensureDemoTracks } from './audioUtils.js';
+import { Playlist } from './playlist.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const tracksDir = path.join(__dirname, 'songs');
-
+const tracksDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'songs');
 ensureDemoTracks(tracksDir);
 
-const files = fs.readdirSync(tracksDir).filter(file => /\.(wav|mp3|m4a|flac|aac|aiff)$/i.test(file));
+const playlist = new Playlist(tracksDir);
+playlist.loadTracks();
 
-console.log('CLI Music Player — audio utilities');
-console.log('Tracks in songs/:');
-for (const file of files) {
-  const duration = getAudioDuration(path.join(tracksDir, file));
-  console.log(`- ${file} (${formatTime(duration)})`);
+console.log('CLI Music Player — playlist');
+if (playlist.tracks.length === 0) {
+  console.log('No tracks found.');
+} else {
+  for (const track of playlist.tracks) {
+    const marker = track.id === playlist.selectedIndex + 1 ? '>' : ' ';
+    console.log(`${marker} ${track.id}. ${track.title} [${track.formattedDuration}]`);
+  }
 }
