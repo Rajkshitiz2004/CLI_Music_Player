@@ -7,6 +7,7 @@ export class Playlist {
     this.tracksDir = tracksDir;
     this.tracks = [];
     this.selectedIndex = 0;
+    this.playingIndex = -1;
   }
 
   loadTracks() {
@@ -48,5 +49,10 @@ export class Playlist {
 
   getSelectedTrack() {
     return this.tracks[this.selectedIndex] || null;
+  }
+
+  setPlayingToSelected() {
+    this.playingIndex = this.selectedIndex;
+    return this.getSelectedTrack();
   }
 }

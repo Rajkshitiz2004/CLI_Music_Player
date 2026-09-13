@@ -1,6 +1,6 @@
 # CLI Music Player
 
-This version loads a playlist from `songs/` and prints a numbered track list.
+This version plays the first playlist track with macOS `afplay`. Press Ctrl+C to stop.
 
 ```bash
 npm start
